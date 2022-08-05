@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.example.socketchat.databinding.FragmentAuthorizationBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -28,5 +29,20 @@ class AuthorizationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel.connectToServer()
+        binding.btnLogin.setOnClickListener {
+            val username = binding.etUsername.text.toString()
+            viewModel.checkUsername(username)
+        }
+        setupObservers()
+    }
+
+    private fun setupObservers() {
+        viewModel.usernameError.observe(viewLifecycleOwner) {
+            if (!it) {
+                viewModel.sendAuth()
+            } else {
+                Toast.makeText(requireContext(), "Invalid username", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }
