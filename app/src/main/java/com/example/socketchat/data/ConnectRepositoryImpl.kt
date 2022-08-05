@@ -10,33 +10,37 @@ class ConnectRepositoryImpl : ConnectRepository {
 
     override suspend fun connectToServer() {
         try {
-            val socketUDP = DatagramSocket()
-            socketUDP.soTimeout = 5000
 
-            val message = "message".toByteArray()
-            var address = ""
-            while (address.isEmpty()) {
-                try {
-                    address = getServerIpByUDP(socketUDP, message) ?: ""
-                    val socketTCP = Socket(address, TCP_PORT)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
+            val address = getServerIpByUDP()
+            val socketTCP = Socket(address, TCP_PORT)
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
-    private suspend fun getServerIpByUDP(socketUDP: DatagramSocket, message: ByteArray): String? {
+    private suspend fun getServerIpByUDP(): String {
+        val socketUDP = DatagramSocket()
+        socketUDP.soTimeout = 2000
+
+        val message = "message".toByteArray()
+
         val packet = DatagramPacket(
             message, message.size,
             InetAddress.getByName("255.255.255.255"), UDP_PORT
         )
-        socketUDP.send(packet)
-        socketUDP.receive(packet)
+        var address = ""
+        while (address.isEmpty()) {
+            try {
+                socketUDP.send(packet)
+                socketUDP.receive(packet)
+                address = packet.address.hostAddress
 
-        return packet.address.hostAddress
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        return address
     }
 
     companion object {
