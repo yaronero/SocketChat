@@ -7,7 +7,6 @@ import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -24,6 +23,7 @@ class ConnectionRepositoryImpl(
     val connectionState = MutableStateFlow(false)
 
     private val actionsScope = CoroutineScope(Dispatchers.IO)
+    private var pingJob: Job? = null
 
     private var socketTCP: Socket? = null
     private var reader: BufferedReader? = null
@@ -55,8 +55,6 @@ class ConnectionRepositoryImpl(
     }
 
     private suspend fun readActions() {
-        var pingJob: Job? = null
-
         while (connectionState.value) {
             try {
                 val json = reader?.readLine()
@@ -64,19 +62,7 @@ class ConnectionRepositoryImpl(
 
                 when (val dto = baseDto.parseAction<Payload>(baseDto.action)) {
                     is ConnectedDto -> {
-                        saveId(dto)
-                        sendConnectDto()
-                        actionsScope.launch {
-                            while (connectionState.value) {
-                                val pingDto = PingDto(sharedPrefs.getId())
-                                val json = gson.toJson(pingDto)
-                                val baseDto = BaseDto(BaseDto.Action.PING, json)
-                                sendBaseDtoToServer(baseDto)
-
-                                pingJob = getPingJob()
-                                delay(PING_PONG_TIMEOUT)
-                            }
-                        }
+                        onConnectedToServer(dto)
                     }
                     is PongDto -> {
                         pingJob?.cancel()
@@ -108,6 +94,22 @@ class ConnectionRepositoryImpl(
 
     private suspend fun saveId(connectedDto: ConnectedDto) {
         sharedPrefs.putId(connectedDto.id)
+    }
+
+    private suspend fun onConnectedToServer(dto: ConnectedDto) {
+        saveId(dto)
+        sendConnectDto()
+        actionsScope.launch {
+            while (connectionState.value) {
+                val pingDto = PingDto(sharedPrefs.getId())
+                val json = gson.toJson(pingDto)
+                val baseDto = BaseDto(BaseDto.Action.PING, json)
+                sendBaseDtoToServer(baseDto)
+
+                pingJob = getPingJob()
+                delay(PING_PONG_TIMEOUT)
+            }
+        }
     }
 
     private suspend fun sendConnectDto() {
