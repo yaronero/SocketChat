@@ -9,6 +9,8 @@ import com.example.socketchat.domain.ConnectionRepository
 import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -21,6 +23,10 @@ import java.net.Socket
 class ConnectionRepositoryImpl(
     private val sharedPrefs: UserSharedPrefsRepository
 ) : ConnectionRepository {
+
+    val connectionState = MutableStateFlow(false)
+
+    private val readActionsScope = CoroutineScope(Dispatchers.IO)
 
     private var socketTCP: Socket? = null
     private var reader: BufferedReader? = null
@@ -39,13 +45,12 @@ class ConnectionRepositoryImpl(
                     socketTCP = Socket(address, TCP_PORT).apply {
                         soTimeout = SOCKET_CONNECTION_TIMEOUT
                     }
+                    connectionState.value = true
                     reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
                     writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
 
-                    coroutineScope {
-                        launch {
-                           readActions()
-                        }
+                    readActionsScope.launch {
+                        readActions()
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -55,13 +60,19 @@ class ConnectionRepositoryImpl(
     }
 
     private suspend fun readActions() {
-        while (true) {
-            delay(READ_ACTION_DELAY)
-            val json = reader?.readLine()
-            val baseDto = gson.fromJson(json, BaseDto::class.java)
+        while (connectionState.value) {
+            try {
+                val json = reader?.readLine()
+                val baseDto = gson.fromJson(json, BaseDto::class.java)
 
-            when (val dto = baseDto.parseAction<Payload>(baseDto.action)) {
-                is ConnectedDto -> saveId(dto, username!!)
+                when (val dto = baseDto.parseAction<Payload>(baseDto.action)) {
+                    is ConnectedDto -> {
+                        saveId(dto)
+                        sendConnectDto()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -70,9 +81,12 @@ class ConnectionRepositoryImpl(
         return sharedPrefs.getId()
     }
 
-    private suspend fun saveId(connectedDto: ConnectedDto, username: String) {
+    private suspend fun saveId(connectedDto: ConnectedDto) {
         sharedPrefs.putId(connectedDto.id)
-        val connectedUser = ConnectDto(sharedPrefs.getId(), username)
+    }
+
+    private suspend fun sendConnectDto() {
+        val connectedUser = ConnectDto(sharedPrefs.getId(), username!!)
         val json = gson.toJson(connectedUser)
         writer?.println(json)
         writer?.flush()

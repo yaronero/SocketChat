@@ -18,7 +18,7 @@ class AuthorizationViewModel(
 
     private val _username = MutableLiveData<String>()
 
-    private val _usernameError = MutableLiveData<Boolean>()
+    private val _usernameError = SingleLiveEvent()
     val usernameError: LiveData<Boolean>
         get() = _usernameError
 
@@ -39,13 +39,8 @@ class AuthorizationViewModel(
     private suspend fun loadUserId(): String {
         var userId = UNDEFINED_ID
         while (userId == UNDEFINED_ID) {
-            delay(GET_ID_OPERATION_DELAY)
             userId = repository.getUserId()
         }
         return userId
-    }
-
-    companion object {
-        private const val GET_ID_OPERATION_DELAY = 200L
     }
 }
