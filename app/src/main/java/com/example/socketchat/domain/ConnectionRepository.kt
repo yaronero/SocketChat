@@ -2,9 +2,7 @@ package com.example.socketchat.domain
 
 interface ConnectionRepository {
 
-    suspend fun setupConnection()
+    suspend fun setupConnection(username: String)
 
-    suspend fun sendAuth(id: String, username: String)
-
-    suspend fun getId(): String
+    fun getUserId(): String
 }
