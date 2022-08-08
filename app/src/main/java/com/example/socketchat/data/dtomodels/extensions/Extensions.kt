@@ -1,9 +1,6 @@
 package com.example.socketchat.data.dtomodels.extensions
 
-import com.example.socketchat.data.dtomodels.BaseDto
-import com.example.socketchat.data.dtomodels.ConnectDto
-import com.example.socketchat.data.dtomodels.ConnectedDto
-import com.example.socketchat.data.dtomodels.Payload
+import com.example.socketchat.data.dtomodels.*
 import com.google.gson.Gson
 
 fun <T: Payload> BaseDto.parseAction(action: BaseDto.Action): T {
@@ -12,7 +9,7 @@ fun <T: Payload> BaseDto.parseAction(action: BaseDto.Action): T {
         BaseDto.Action.CONNECT -> gson.fromJson(payload, ConnectDto::class.java)
         BaseDto.Action.CONNECTED -> gson.fromJson(payload, ConnectedDto::class.java)
         BaseDto.Action.PING -> TODO()
-        BaseDto.Action.PONG -> TODO()
+        BaseDto.Action.PONG -> gson.fromJson(payload, PongDto::class.java)
         BaseDto.Action.GET_USERS -> TODO()
         BaseDto.Action.USERS_RECEIVED -> TODO()
         BaseDto.Action.SEND_MESSAGE -> TODO()
