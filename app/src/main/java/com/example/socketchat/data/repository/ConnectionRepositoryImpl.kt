@@ -1,16 +1,12 @@
 package com.example.socketchat.data.repository
 
-import com.example.socketchat.data.dtomodels.BaseDto
-import com.example.socketchat.data.dtomodels.ConnectDto
-import com.example.socketchat.data.dtomodels.ConnectedDto
-import com.example.socketchat.data.dtomodels.Payload
+import com.example.socketchat.data.dtomodels.*
 import com.example.socketchat.data.dtomodels.extensions.parseAction
 import com.example.socketchat.domain.ConnectionRepository
 import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
@@ -26,7 +22,8 @@ class ConnectionRepositoryImpl(
 
     val connectionState = MutableStateFlow(false)
 
-    private val readActionsScope = CoroutineScope(Dispatchers.IO)
+    private val actionsScope = CoroutineScope(Dispatchers.IO)
+    private var pingJob: Job? = null
 
     private var socketTCP: Socket? = null
     private var reader: BufferedReader? = null
@@ -38,23 +35,21 @@ class ConnectionRepositoryImpl(
 
     override suspend fun setupConnection(username: String) {
         this.username = username
-        if (socketTCP == null) {
-            while (socketTCP == null) {
-                try {
-                    val address = getServerIpByUDP()
-                    socketTCP = Socket(address, TCP_PORT).apply {
-                        soTimeout = SOCKET_CONNECTION_TIMEOUT
-                    }
-                    connectionState.value = true
-                    reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
-                    writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
-
-                    readActionsScope.launch {
-                        readActions()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+        while (!connectionState.value) {
+            try {
+                val address = getServerIpByUDP()
+                socketTCP = Socket(address, TCP_PORT).apply {
+                    soTimeout = SOCKET_CONNECTION_TIMEOUT
                 }
+                connectionState.value = true
+                reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
+                writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
+
+                actionsScope.launch {
+                    readActions()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
@@ -67,8 +62,10 @@ class ConnectionRepositoryImpl(
 
                 when (val dto = baseDto.parseAction<Payload>(baseDto.action)) {
                     is ConnectedDto -> {
-                        saveId(dto)
-                        sendConnectDto()
+                        onConnectedToServer(dto)
+                    }
+                    is PongDto -> {
+                        pingJob?.cancel()
                     }
                 }
             } catch (e: Exception) {
@@ -81,13 +78,49 @@ class ConnectionRepositoryImpl(
         return sharedPrefs.getId()
     }
 
+    private fun getPingJob(): Job = actionsScope.launch {
+        delay(PING_PONG_TIMEOUT)
+
+        closeConnection()
+    }
+
+    private suspend fun closeConnection() {
+        reader?.close()
+        writer?.close()
+        socketTCP?.close()
+        connectionState.value = false
+        actionsScope.cancel()
+    }
+
     private suspend fun saveId(connectedDto: ConnectedDto) {
         sharedPrefs.putId(connectedDto.id)
+    }
+
+    private suspend fun onConnectedToServer(dto: ConnectedDto) {
+        saveId(dto)
+        sendConnectDto()
+        actionsScope.launch {
+            while (connectionState.value) {
+                val pingDto = PingDto(sharedPrefs.getId())
+                val json = gson.toJson(pingDto)
+                val baseDto = BaseDto(BaseDto.Action.PING, json)
+                sendBaseDtoToServer(baseDto)
+
+                pingJob = getPingJob()
+                delay(PING_PONG_TIMEOUT)
+            }
+        }
     }
 
     private suspend fun sendConnectDto() {
         val connectedUser = ConnectDto(sharedPrefs.getId(), username!!)
         val json = gson.toJson(connectedUser)
+        val baseDto = BaseDto(BaseDto.Action.CONNECT, json)
+        sendBaseDtoToServer(baseDto)
+    }
+
+    private suspend fun sendBaseDtoToServer(baseDto: BaseDto) {
+        val json = gson.toJson(baseDto)
         writer?.println(json)
         writer?.flush()
     }
@@ -123,6 +156,6 @@ class ConnectionRepositoryImpl(
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 
-        private const val READ_ACTION_DELAY = 200L
+        private const val PING_PONG_TIMEOUT = 10000L
     }
 }
