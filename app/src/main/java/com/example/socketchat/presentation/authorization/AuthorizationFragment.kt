@@ -10,7 +10,6 @@ import androidx.fragment.app.Fragment
 import com.example.socketchat.R
 import com.example.socketchat.databinding.FragmentAuthorizationBinding
 import com.example.socketchat.presentation.userslist.UsersListFragment
-import com.example.socketchat.utils.UNDEFINED_ID
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AuthorizationFragment : Fragment() {

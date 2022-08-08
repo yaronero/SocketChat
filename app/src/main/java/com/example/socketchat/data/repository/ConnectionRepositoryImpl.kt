@@ -23,9 +23,7 @@ class ConnectionRepositoryImpl(
 
     val connectionState = MutableStateFlow(false)
 
-    private val readActionsScope = CoroutineScope(Dispatchers.IO)
-    private val pingPongScope = CoroutineScope(Dispatchers.IO)
-    private var pingPongState = false
+    private val actionsScope = CoroutineScope(Dispatchers.IO)
 
     private var socketTCP: Socket? = null
     private var reader: BufferedReader? = null
@@ -37,28 +35,28 @@ class ConnectionRepositoryImpl(
 
     override suspend fun setupConnection(username: String) {
         this.username = username
-        if (socketTCP == null || socketTCP!!.isClosed) {
-            while (socketTCP == null || socketTCP!!.isClosed) {
-                try {
-                    val address = getServerIpByUDP()
-                    socketTCP = Socket(address, TCP_PORT).apply {
-                        soTimeout = SOCKET_CONNECTION_TIMEOUT
-                    }
-                    connectionState.value = true
-                    reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
-                    writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
-
-                    readActionsScope.launch {
-                        readActions()
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
+        while (!connectionState.value) {
+            try {
+                val address = getServerIpByUDP()
+                socketTCP = Socket(address, TCP_PORT).apply {
+                    soTimeout = SOCKET_CONNECTION_TIMEOUT
                 }
+                connectionState.value = true
+                reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
+                writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
+
+                actionsScope.launch {
+                    readActions()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
     }
 
     private suspend fun readActions() {
+        var pingJob: Job? = null
+
         while (connectionState.value) {
             try {
                 val json = reader?.readLine()
@@ -68,10 +66,20 @@ class ConnectionRepositoryImpl(
                     is ConnectedDto -> {
                         saveId(dto)
                         sendConnectDto()
-                        pingPongScope.launch { ping() }
+                        actionsScope.launch {
+                            while (connectionState.value) {
+                                val pingDto = PingDto(sharedPrefs.getId())
+                                val json = gson.toJson(pingDto)
+                                val baseDto = BaseDto(BaseDto.Action.PING, json)
+                                sendBaseDtoToServer(baseDto)
+
+                                pingJob = getPingJob()
+                                delay(PING_PONG_TIMEOUT)
+                            }
+                        }
                     }
                     is PongDto -> {
-                        pingPongState = true
+                        pingJob?.cancel()
                     }
                 }
             } catch (e: Exception) {
@@ -80,25 +88,22 @@ class ConnectionRepositoryImpl(
         }
     }
 
-    private suspend fun ping() {
-        while (connectionState.value) {
-            val pingDto = PingDto(sharedPrefs.getId())
-            val json = gson.toJson(pingDto)
-            val baseDto = BaseDto(BaseDto.Action.PING, json)
-            sendBaseDtoToServer(baseDto)
-            delay(PING_PONG_TIMEOUT)
-            if (!pingPongState) {
-                socketTCP?.close()
-                connectionState.value = false
-                setupConnection(username!!)
-            } else {
-                pingPongState = false
-            }
-        }
-    }
-
     override fun getUserId(): String {
         return sharedPrefs.getId()
+    }
+
+    private fun getPingJob(): Job = actionsScope.launch {
+        delay(PING_PONG_TIMEOUT)
+
+        closeConnection()
+    }
+
+    private suspend fun closeConnection() {
+        reader?.close()
+        writer?.close()
+        socketTCP?.close()
+        connectionState.value = false
+        actionsScope.cancel()
     }
 
     private suspend fun saveId(connectedDto: ConnectedDto) {
