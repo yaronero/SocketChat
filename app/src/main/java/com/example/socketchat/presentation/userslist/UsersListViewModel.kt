@@ -20,7 +20,7 @@ class UsersListViewModel(
 
     fun getAllUsers(){
         viewModelScope.launch(Dispatchers.IO) {
-            while(repository.connectionState.value) {
+            while(repository.getConnectionState()) {
                 delay(300)
                 repository.getUsersList()
             }

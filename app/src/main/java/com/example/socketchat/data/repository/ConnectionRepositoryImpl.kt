@@ -8,7 +8,11 @@ import com.example.socketchat.utils.UNDEFINED_USERNAME
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import java.io.*
+import kotlinx.coroutines.flow.StateFlow
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.io.PrintWriter
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -18,11 +22,16 @@ class ConnectionRepositoryImpl(
     private val sharedPrefs: UserSharedPrefsRepository
 ) : ConnectionRepository {
 
-    override val connectionState = MutableStateFlow(false)
+    private val _connectionState = MutableStateFlow(false)
+    override val connectionState: StateFlow<Boolean>
+        get() = _connectionState
 
-    override val usersList = MutableStateFlow<List<User>>(emptyList())
+    private val _usersList = MutableStateFlow<List<User>>(emptyList())
+    override val usersList: StateFlow<List<User>>
+        get() = _usersList
 
-    private val actionsScope = CoroutineScope(Dispatchers.IO)
+    private val job = SupervisorJob()
+    private val actionsScope = CoroutineScope(job + Dispatchers.IO)
     private var pingJob: Job? = null
 
     private var socketTCP: Socket? = null
@@ -35,13 +44,13 @@ class ConnectionRepositoryImpl(
 
     override suspend fun setupConnection(username: String) {
         sharedPrefs.putUsername(username)
-        while (!connectionState.value) {
+        while (socketTCP == null) {
             try {
                 val address = getServerIpByUDP()
                 socketTCP = Socket(address, TCP_PORT).apply {
                     soTimeout = SOCKET_CONNECTION_TIMEOUT
                 }
-                connectionState.value = true
+
                 reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
                 writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
 
@@ -55,7 +64,7 @@ class ConnectionRepositoryImpl(
     }
 
     private suspend fun readActions() {
-        while (connectionState.value) {
+        while (!socketTCP!!.isClosed) {
             try {
                 val json = reader?.readLine()
                 val baseDto = gson.fromJson(json, BaseDto::class.java)
@@ -85,14 +94,15 @@ class ConnectionRepositoryImpl(
     }
 
     private fun parseUsersReceivedDto(usersReceivedDto: UsersReceivedDto) {
-        usersList.value = usersReceivedDto.users
+        _usersList.value = usersReceivedDto.users
     }
 
     private suspend fun onConnectedToServer(dto: ConnectedDto) {
         id = dto.id
         sendConnectDto()
+        _connectionState.value = true
         actionsScope.launch {
-            while (connectionState.value) {
+            while (_connectionState.value) {
                 val pingDto = PingDto(id!!)
                 val json = gson.toJson(pingDto)
                 val baseDto = BaseDto(BaseDto.Action.PING, json)
@@ -102,10 +112,6 @@ class ConnectionRepositoryImpl(
                 delay(PING_PONG_TIMEOUT)
             }
         }
-    }
-
-    override fun isUserAuthorized(): Boolean {
-        return sharedPrefs.isUserAuthorized() && id != null
     }
 
     override fun logOut() {
@@ -135,8 +141,8 @@ class ConnectionRepositoryImpl(
         reader?.close()
         writer?.close()
         socketTCP?.close()
-        connectionState.value = false
-        actionsScope.cancel()
+        _connectionState.value = false
+        job.cancelChildren()
     }
 
     private suspend fun getServerIpByUDP(): String {
@@ -162,12 +168,16 @@ class ConnectionRepositoryImpl(
         return address
     }
 
+    override fun getConnectionState(): Boolean {
+        return connectionState.value
+    }
+
     companion object {
         private const val UDP_PORT = 8888
         private const val TCP_PORT = 6666
 
-        private const val BROADCAST_ADDRESS = "10.0.2.2"
-//        private const val BROADCAST_ADDRESS = "255.255.255.255"
+//        private const val BROADCAST_ADDRESS = "10.0.2.2"
+        private const val BROADCAST_ADDRESS = "255.255.255.255"
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 

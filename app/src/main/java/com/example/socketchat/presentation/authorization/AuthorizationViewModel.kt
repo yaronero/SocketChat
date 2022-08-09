@@ -5,7 +5,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.socketchat.domain.ConnectionRepository
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AuthorizationViewModel(
     private val repository: ConnectionRepository
@@ -26,8 +27,9 @@ class AuthorizationViewModel(
             repository.setupConnection(_username.value!!)
         }
         viewModelScope.launch(Dispatchers.IO) {
-            while (!repository.isUserAuthorized()){}
-            _isConnectedToServer.postValue(repository.isUserAuthorized())
+            repository.connectionState.collect {
+                _isConnectedToServer.postValue(it)
+            }
         }
     }
 

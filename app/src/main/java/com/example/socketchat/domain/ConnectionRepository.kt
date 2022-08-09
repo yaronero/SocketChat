@@ -1,13 +1,13 @@
 package com.example.socketchat.domain
 
 import com.example.socketchat.data.dtomodels.User
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 interface ConnectionRepository {
 
-    val connectionState: MutableStateFlow<Boolean>
+    val connectionState: StateFlow<Boolean>
 
-    val usersList: MutableStateFlow<List<User>>
+    val usersList: StateFlow<List<User>>
 
     suspend fun setupConnection(username: String)
 
@@ -15,5 +15,5 @@ interface ConnectionRepository {
 
     fun logOut()
 
-    fun isUserAuthorized(): Boolean
+    fun getConnectionState(): Boolean
 }

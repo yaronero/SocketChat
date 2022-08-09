@@ -3,7 +3,8 @@ package com.example.socketchat.data.repository
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.example.socketchat.domain.UserSharedPrefsRepository
-import com.example.socketchat.utils.*
+import com.example.socketchat.utils.UNDEFINED_USERNAME
+import com.example.socketchat.utils.USERNAME
 
 class UserSharedPrefsRepositoryImpl(
     private val userSharedPrefs: SharedPreferences
@@ -17,9 +18,5 @@ class UserSharedPrefsRepositoryImpl(
 
     override fun getUsername(): String {
         return userSharedPrefs.getString(USERNAME, UNDEFINED_USERNAME) ?: UNDEFINED_USERNAME
-    }
-
-    override fun isUserAuthorized(): Boolean {
-        return userSharedPrefs.getString(USERNAME, UNDEFINED_USERNAME) != UNDEFINED_USERNAME
     }
 }
