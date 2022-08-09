@@ -4,6 +4,7 @@ import com.example.socketchat.data.dtomodels.*
 import com.example.socketchat.data.dtomodels.extensions.parseAction
 import com.example.socketchat.domain.ConnectionRepository
 import com.example.socketchat.domain.UserSharedPrefsRepository
+import com.example.socketchat.utils.UNDEFINED_USERNAME
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +19,6 @@ class ConnectionRepositoryImpl(
 ) : ConnectionRepository {
 
     override val connectionState = MutableStateFlow(false)
-    override val isUserAuthorized = MutableStateFlow(false)
 
     override val usersList = MutableStateFlow<List<User>>(emptyList())
 
@@ -31,10 +31,10 @@ class ConnectionRepositoryImpl(
 
     private val gson = Gson()
 
-    private var username: String? = null
+    private var id: String? = null
 
     override suspend fun setupConnection(username: String) {
-        this.username = username
+        sharedPrefs.putUsername(username)
         while (!connectionState.value) {
             try {
                 val address = getServerIpByUDP()
@@ -78,7 +78,7 @@ class ConnectionRepositoryImpl(
     }
 
     override suspend fun getUsersList() {
-        val getUserList = GetUsersDto(sharedPrefs.getId())
+        val getUserList = GetUsersDto(id!!)
         val json = gson.toJson(getUserList)
         val baseDto = BaseDto(BaseDto.Action.GET_USERS, json)
         sendBaseDtoToServer(baseDto)
@@ -88,21 +88,12 @@ class ConnectionRepositoryImpl(
         usersList.value = usersReceivedDto.users
     }
 
-    override fun getUserId(): String {
-        return sharedPrefs.getId()
-    }
-
-    private suspend fun saveId(connectedDto: ConnectedDto) {
-        sharedPrefs.putId(connectedDto.id)
-    }
-
     private suspend fun onConnectedToServer(dto: ConnectedDto) {
-        saveId(dto)
+        id = dto.id
         sendConnectDto()
-        setUserAuthorized(true)
         actionsScope.launch {
             while (connectionState.value) {
-                val pingDto = PingDto(sharedPrefs.getId())
+                val pingDto = PingDto(id!!)
                 val json = gson.toJson(pingDto)
                 val baseDto = BaseDto(BaseDto.Action.PING, json)
                 sendBaseDtoToServer(baseDto)
@@ -114,16 +105,15 @@ class ConnectionRepositoryImpl(
     }
 
     override fun isUserAuthorized(): Boolean {
-        return sharedPrefs.isUserAuthorized()
+        return sharedPrefs.isUserAuthorized() && id != null
     }
 
-    override fun setUserAuthorized(isUserAuthorized: Boolean) {
-        sharedPrefs.setIfUserAuthorized(isUserAuthorized)
-        this.isUserAuthorized.value = true
+    override fun logOut() {
+        sharedPrefs.putUsername(UNDEFINED_USERNAME)
     }
 
     private suspend fun sendConnectDto() {
-        val connectedUser = ConnectDto(sharedPrefs.getId(), username!!)
+        val connectedUser = ConnectDto(id!!, sharedPrefs.getUsername())
         val json = gson.toJson(connectedUser)
         val baseDto = BaseDto(BaseDto.Action.CONNECT, json)
         sendBaseDtoToServer(baseDto)

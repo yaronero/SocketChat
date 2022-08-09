@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 interface ConnectionRepository {
 
     val connectionState: MutableStateFlow<Boolean>
-    val isUserAuthorized: MutableStateFlow<Boolean>
 
     val usersList: MutableStateFlow<List<User>>
 
@@ -14,9 +13,7 @@ interface ConnectionRepository {
 
     suspend fun getUsersList()
 
-    fun getUserId(): String
-
-    fun setUserAuthorized(isUserAuthorized: Boolean)
+    fun logOut()
 
     fun isUserAuthorized(): Boolean
 }
