@@ -11,7 +11,7 @@ fun <T: Payload> BaseDto.parseAction(action: BaseDto.Action): T {
         BaseDto.Action.PING -> TODO()
         BaseDto.Action.PONG -> gson.fromJson(payload, PongDto::class.java)
         BaseDto.Action.GET_USERS -> TODO()
-        BaseDto.Action.USERS_RECEIVED -> TODO()
+        BaseDto.Action.USERS_RECEIVED -> gson.fromJson(payload, UsersReceivedDto::class.java)
         BaseDto.Action.SEND_MESSAGE -> TODO()
         BaseDto.Action.NEW_MESSAGE -> TODO()
         BaseDto.Action.DISCONNECT -> TODO()

@@ -23,7 +23,7 @@ class UserSharedPrefsRepositoryImpl(
 
     override fun setIfUserAuthorized(isUserAuthorized: Boolean) {
         userSharedPrefs.edit {
-            putBoolean(USER_ID, isUserAuthorized)
+            putBoolean(IS_USER_AUTHORIZED, isUserAuthorized)
         }
     }
 

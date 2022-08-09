@@ -7,10 +7,7 @@ import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.google.gson.Gson
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.io.PrintWriter
+import java.io.*
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
@@ -20,7 +17,10 @@ class ConnectionRepositoryImpl(
     private val sharedPrefs: UserSharedPrefsRepository
 ) : ConnectionRepository {
 
-    val connectionState = MutableStateFlow(false)
+    override val connectionState = MutableStateFlow(false)
+    override val isUserAuthorized = MutableStateFlow(false)
+
+    override val usersList = MutableStateFlow<List<User>>(emptyList())
 
     private val actionsScope = CoroutineScope(Dispatchers.IO)
     private var pingJob: Job? = null
@@ -67,6 +67,9 @@ class ConnectionRepositoryImpl(
                     is PongDto -> {
                         pingJob?.cancel()
                     }
+                    is UsersReceivedDto -> {
+                        parseUsersReceivedDto(dto)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -74,22 +77,19 @@ class ConnectionRepositoryImpl(
         }
     }
 
+    override suspend fun getUsersList() {
+        val getUserList = GetUsersDto(sharedPrefs.getId())
+        val json = gson.toJson(getUserList)
+        val baseDto = BaseDto(BaseDto.Action.GET_USERS, json)
+        sendBaseDtoToServer(baseDto)
+    }
+
+    private fun parseUsersReceivedDto(usersReceivedDto: UsersReceivedDto) {
+        usersList.value = usersReceivedDto.users
+    }
+
     override fun getUserId(): String {
         return sharedPrefs.getId()
-    }
-
-    private fun getPingJob(): Job = actionsScope.launch {
-        delay(PING_PONG_TIMEOUT)
-
-        closeConnection()
-    }
-
-    private suspend fun closeConnection() {
-        reader?.close()
-        writer?.close()
-        socketTCP?.close()
-        connectionState.value = false
-        actionsScope.cancel()
     }
 
     private suspend fun saveId(connectedDto: ConnectedDto) {
@@ -99,6 +99,7 @@ class ConnectionRepositoryImpl(
     private suspend fun onConnectedToServer(dto: ConnectedDto) {
         saveId(dto)
         sendConnectDto()
+        setUserAuthorized(true)
         actionsScope.launch {
             while (connectionState.value) {
                 val pingDto = PingDto(sharedPrefs.getId())
@@ -112,6 +113,15 @@ class ConnectionRepositoryImpl(
         }
     }
 
+    override fun isUserAuthorized(): Boolean {
+        return sharedPrefs.isUserAuthorized()
+    }
+
+    override fun setUserAuthorized(isUserAuthorized: Boolean) {
+        sharedPrefs.setIfUserAuthorized(isUserAuthorized)
+        this.isUserAuthorized.value = true
+    }
+
     private suspend fun sendConnectDto() {
         val connectedUser = ConnectDto(sharedPrefs.getId(), username!!)
         val json = gson.toJson(connectedUser)
@@ -119,10 +129,24 @@ class ConnectionRepositoryImpl(
         sendBaseDtoToServer(baseDto)
     }
 
+    private fun getPingJob(): Job = actionsScope.launch {
+        delay(PING_PONG_TIMEOUT)
+
+        closeConnection()
+    }
+
     private suspend fun sendBaseDtoToServer(baseDto: BaseDto) {
         val json = gson.toJson(baseDto)
         writer?.println(json)
         writer?.flush()
+    }
+
+    private suspend fun closeConnection() {
+        reader?.close()
+        writer?.close()
+        socketTCP?.close()
+        connectionState.value = false
+        actionsScope.cancel()
     }
 
     private suspend fun getServerIpByUDP(): String {
@@ -152,7 +176,8 @@ class ConnectionRepositoryImpl(
         private const val UDP_PORT = 8888
         private const val TCP_PORT = 6666
 
-        private const val BROADCAST_ADDRESS = "255.255.255.255"
+        private const val BROADCAST_ADDRESS = "10.0.2.2"
+//        private const val BROADCAST_ADDRESS = "255.255.255.255"
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 
