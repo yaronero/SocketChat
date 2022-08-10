@@ -49,11 +49,13 @@ class AuthorizationFragment : Fragment() {
                 Toast.makeText(requireContext(), "Invalid username", Toast.LENGTH_SHORT).show()
             }
         }
-        viewModel.userId.observe(viewLifecycleOwner) {
-            parentFragmentManager
-                .beginTransaction()
-                .replace(R.id.container, UsersListFragment())
-                .commit()
+        viewModel.isConnectedToServer.observe(viewLifecycleOwner) {
+            if (it) {
+                parentFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.container, UsersListFragment())
+                    .commit()
+            }
         }
     }
 }

@@ -5,16 +5,16 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.socketchat.domain.ConnectionRepository
-import com.example.socketchat.utils.UNDEFINED_ID
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class AuthorizationViewModel(
     private val repository: ConnectionRepository
 ) : ViewModel() {
 
-    private val _userId = MutableLiveData<String>()
-    val userId: LiveData<String>
-        get() = _userId
+    private val _isConnectedToServer = MutableLiveData<Boolean>()
+    val isConnectedToServer: LiveData<Boolean>
+        get() = _isConnectedToServer
 
     private val _username = MutableLiveData<String>()
 
@@ -27,20 +27,14 @@ class AuthorizationViewModel(
             repository.setupConnection(_username.value!!)
         }
         viewModelScope.launch(Dispatchers.IO) {
-            _userId.postValue(loadUserId())
+            repository.connectionState.collect {
+                _isConnectedToServer.postValue(it)
+            }
         }
     }
 
     fun checkUsername(username: String) {
         _username.value = username
         _usernameError.value = username.isBlank()
-    }
-
-    private suspend fun loadUserId(): String {
-        var userId = UNDEFINED_ID
-        while (userId == UNDEFINED_ID) {
-            userId = repository.getUserId()
-        }
-        return userId
     }
 }
