@@ -22,13 +22,10 @@ class ConnectionRepositoryImpl(
     private val sharedPrefs: UserSharedPrefsRepository
 ) : ConnectionRepository {
 
-    private val _connectionState = MutableStateFlow(false)
-    override val connectionState: StateFlow<Boolean>
-        get() = _connectionState
+    private var isConnected = false
+    override val connectionState = MutableStateFlow(false)
 
-    private val _usersList = MutableStateFlow<List<User>>(emptyList())
-    override val usersList: StateFlow<List<User>>
-        get() = _usersList
+    override val usersList = MutableStateFlow<List<User>>(emptyList())
 
     private val job = SupervisorJob()
     private val actionsScope = CoroutineScope(job + Dispatchers.IO)
@@ -44,13 +41,13 @@ class ConnectionRepositoryImpl(
 
     override suspend fun setupConnection(username: String) {
         sharedPrefs.putUsername(username)
-        while (socketTCP == null) {
+        while (!isConnected) {
             try {
                 val address = getServerIpByUDP()
                 socketTCP = Socket(address, TCP_PORT).apply {
                     soTimeout = SOCKET_CONNECTION_TIMEOUT
                 }
-
+                isConnected = true
                 reader = BufferedReader(InputStreamReader(socketTCP?.getInputStream()))
                 writer = PrintWriter(OutputStreamWriter(socketTCP?.getOutputStream()))
 
@@ -64,7 +61,7 @@ class ConnectionRepositoryImpl(
     }
 
     private suspend fun readActions() {
-        while (!socketTCP!!.isClosed) {
+        while (isConnected) {
             try {
                 val json = reader?.readLine()
                 val baseDto = gson.fromJson(json, BaseDto::class.java)
@@ -87,29 +84,33 @@ class ConnectionRepositoryImpl(
     }
 
     override suspend fun getUsersList() {
-        val getUserList = GetUsersDto(id!!)
-        val json = gson.toJson(getUserList)
-        val baseDto = BaseDto(BaseDto.Action.GET_USERS, json)
-        sendBaseDtoToServer(baseDto)
+        id?.also {
+            val getUserList = GetUsersDto(it)
+            val json = gson.toJson(getUserList)
+            val baseDto = BaseDto(BaseDto.Action.GET_USERS, json)
+            sendBaseDtoToServer(baseDto)
+        }
     }
 
     private fun parseUsersReceivedDto(usersReceivedDto: UsersReceivedDto) {
-        _usersList.value = usersReceivedDto.users
+        usersList.value = usersReceivedDto.users
     }
 
     private suspend fun onConnectedToServer(dto: ConnectedDto) {
         id = dto.id
         sendConnectDto()
-        _connectionState.value = true
+        connectionState.value = true
         actionsScope.launch {
-            while (_connectionState.value) {
-                val pingDto = PingDto(id!!)
-                val json = gson.toJson(pingDto)
-                val baseDto = BaseDto(BaseDto.Action.PING, json)
-                sendBaseDtoToServer(baseDto)
+            while (connectionState.value) {
+                id?.also {
+                    val pingDto = PingDto(it)
+                    val json = gson.toJson(pingDto)
+                    val baseDto = BaseDto(BaseDto.Action.PING, json)
+                    sendBaseDtoToServer(baseDto)
 
-                pingJob = getPingJob()
-                delay(PING_PONG_TIMEOUT)
+                    pingJob = getPingJob()
+                    delay(PING_PONG_TIMEOUT)
+                }
             }
         }
     }
@@ -119,10 +120,12 @@ class ConnectionRepositoryImpl(
     }
 
     private suspend fun sendConnectDto() {
-        val connectedUser = ConnectDto(id!!, sharedPrefs.getUsername())
-        val json = gson.toJson(connectedUser)
-        val baseDto = BaseDto(BaseDto.Action.CONNECT, json)
-        sendBaseDtoToServer(baseDto)
+        id?.also {
+            val connectedUser = ConnectDto(it, sharedPrefs.getUsername())
+            val json = gson.toJson(connectedUser)
+            val baseDto = BaseDto(BaseDto.Action.CONNECT, json)
+            sendBaseDtoToServer(baseDto)
+        }
     }
 
     private fun getPingJob(): Job = actionsScope.launch {
@@ -141,7 +144,7 @@ class ConnectionRepositoryImpl(
         reader?.close()
         writer?.close()
         socketTCP?.close()
-        _connectionState.value = false
+        connectionState.value = false
         job.cancelChildren()
     }
 
