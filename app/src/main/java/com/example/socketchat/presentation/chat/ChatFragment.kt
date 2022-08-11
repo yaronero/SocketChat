@@ -1,11 +1,11 @@
 package com.example.socketchat.presentation.chat
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import com.example.socketchat.R
 import com.example.socketchat.databinding.FragmentChatBinding
 import com.example.socketchat.presentation.chat.adapter.ChatAdapter
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -41,6 +41,7 @@ class ChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as AppCompatActivity).supportActionBar?.title = viewModel.getUsername()
 
         setupObservers()
         setupListeners()
@@ -63,6 +64,11 @@ class ChatFragment : Fragment() {
 
     private fun setupAdapter() {
         binding.rvMessages.adapter = adapter
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.main_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
     }
 
     companion object {

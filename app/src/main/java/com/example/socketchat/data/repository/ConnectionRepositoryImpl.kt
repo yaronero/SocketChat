@@ -122,8 +122,9 @@ class ConnectionRepositoryImpl(
         }
     }
 
-    override fun logOut() {
+    override suspend fun logOut() {
         sharedPrefs.putUsername(UNDEFINED_USERNAME)
+        closeConnection()
     }
 
     override suspend fun sendMessage(receiverId: String, message: String) {
@@ -169,6 +170,7 @@ class ConnectionRepositoryImpl(
         writer?.close()
         socketTCP?.close()
         connectionState.value = false
+        isConnected = false
         job.cancelChildren()
     }
 

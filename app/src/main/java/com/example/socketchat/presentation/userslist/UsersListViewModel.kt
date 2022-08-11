@@ -31,4 +31,10 @@ class UsersListViewModel(
             }
         }
     }
+
+    fun logOut() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.logOut()
+        }
+    }
 }
