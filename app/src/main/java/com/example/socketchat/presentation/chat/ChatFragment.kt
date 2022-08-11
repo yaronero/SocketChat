@@ -41,7 +41,7 @@ class ChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        (activity as AppCompatActivity).supportActionBar?.title = viewModel.getUsername()
+        (activity as AppCompatActivity).supportActionBar?.title = arguments?.getString(ANOTHER_USER_NAME)!!
 
         setupObservers()
         setupListeners()
@@ -73,10 +73,14 @@ class ChatFragment : Fragment() {
 
     companion object {
         private const val ANOTHER_USER_ID = "another_user_id"
+        private const val ANOTHER_USER_NAME = "another_user_name"
 
-        fun newInstance(anotherUserId: String): ChatFragment {
+        fun newInstance(anotherUserId: String, username: String): ChatFragment {
             return ChatFragment().apply {
-                arguments = bundleOf(ANOTHER_USER_ID to anotherUserId)
+                arguments = bundleOf(
+                    ANOTHER_USER_ID to anotherUserId,
+                    ANOTHER_USER_NAME to username
+                )
             }
         }
     }

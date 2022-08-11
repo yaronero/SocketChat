@@ -205,8 +205,8 @@ class ConnectionRepositoryImpl(
         private const val UDP_PORT = 8888
         private const val TCP_PORT = 6666
 
-        private const val BROADCAST_ADDRESS = "10.0.2.2"
-//        private const val BROADCAST_ADDRESS = "255.255.255.255"
+//        private const val BROADCAST_ADDRESS = "10.0.2.2"
+        private const val BROADCAST_ADDRESS = "255.255.255.255"
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 

@@ -2,6 +2,7 @@ package com.example.socketchat.presentation.userslist
 
 import android.os.Bundle
 import android.view.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.socketchat.R
 import com.example.socketchat.data.dtomodels.User
@@ -34,6 +35,7 @@ class UsersListFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.app_name)
 
         viewModel.getAllUsers()
         setupAdapter()
@@ -69,7 +71,7 @@ class UsersListFragment : Fragment() {
     private fun onItemClickListener(user: User) {
         parentFragmentManager
             .beginTransaction()
-            .replace(R.id.container, ChatFragment.newInstance(user.id))
+            .replace(R.id.container, ChatFragment.newInstance(user.id, user.name))
             .addToBackStack(null)
             .commit()
     }

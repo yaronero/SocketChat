@@ -5,10 +5,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.example.socketchat.R
 import com.example.socketchat.databinding.FragmentAuthorizationBinding
+import com.example.socketchat.presentation.chat.ChatFragment
 import com.example.socketchat.presentation.userslist.UsersListFragment
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -30,6 +32,7 @@ class AuthorizationFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.authorization)
 
         binding.btnLogin.setOnClickListener {
             val username = binding.etUsername.text.toString()
