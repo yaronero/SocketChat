@@ -42,15 +42,17 @@ class AuthorizationFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        viewModel.usernameError.observe(viewLifecycleOwner) {
-            if (!it) {
-                viewModel.sendAuth(binding.etUsername.text.toString())
-            } else {
-                Toast.makeText(requireContext(), "Invalid username", Toast.LENGTH_SHORT).show()
+        viewModel.isUsernameError.observe(viewLifecycleOwner) {
+            if (it) {
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.invalid_username),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
         viewModel.isAuthorized.observe(viewLifecycleOwner) {
-            if(it) {
+            if (it) {
                 binding.etUsername.isEnabled = false
                 binding.btnLogin.isEnabled = false
                 binding.progressBar.isVisible = true

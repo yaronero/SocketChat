@@ -8,4 +8,5 @@
     <string name="write_a_message">Write a message</string>
     <string name="send">Send</string>
     <string name="log_out">Log out</string>
+    <string name="invalid_username">Invalid username</string>
 </resources>

@@ -19,7 +19,6 @@ class SingleLiveEvent : MutableLiveData<Boolean>() {
         }
     }
 
-
     @MainThread
     override fun setValue(t: Boolean?) {
         mPending.set(true)

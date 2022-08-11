@@ -21,11 +21,9 @@ class AuthorizationViewModel(
     val isConnectedToServer: LiveData<Boolean>
         get() = _isConnectedToServer
 
-    private val _username = MutableLiveData<String>()
-
-    private val _usernameError = SingleLiveEvent()
-    val usernameError: LiveData<Boolean>
-        get() = _usernameError
+    private val _isUsernameError = SingleLiveEvent()
+    val isUsernameError: LiveData<Boolean>
+        get() = _isUsernameError
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -39,7 +37,7 @@ class AuthorizationViewModel(
         }
     }
 
-    fun sendAuth(username: String = repository.getUsername()) {
+    private fun sendAuth(username: String = repository.getUsername()) {
         _isAuthorized.value = true
         viewModelScope.launch(Dispatchers.IO) {
             repository.setupConnection(username)
@@ -47,8 +45,12 @@ class AuthorizationViewModel(
     }
 
     fun checkUsername(username: String) {
-        _username.value = username
-        _usernameError.value = username.isBlank()
+        if(username.isNotBlank()) {
+            _isUsernameError.value = false
+            sendAuth(username)
+        } else {
+            _isUsernameError.value = true
+        }
     }
 
     private fun isAuthorized(): Boolean {
