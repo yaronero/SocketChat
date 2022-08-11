@@ -5,10 +5,14 @@ import com.example.socketchat.data.dtomodels.User
 import com.example.socketchat.databinding.UserItemBinding
 
 class UsersListViewHolder(
-    private val binding: UserItemBinding
+    private val binding: UserItemBinding,
+    private val onItemClickListener: (User) -> Unit
 ) : RecyclerView.ViewHolder(binding.root) {
 
     fun bind(user: User) {
         binding.userName.text = user.name
+        binding.root.setOnClickListener {
+            onItemClickListener(user)
+        }
     }
 }

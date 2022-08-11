@@ -3,4 +3,6 @@
     <string name="login">Login</string>
     <string name="enter_username">Enter username</string>
     <string name="exit">Exit</string>
+    <string name="write_a_message">Write a message</string>
+    <string name="send">Send</string>
 </resources>

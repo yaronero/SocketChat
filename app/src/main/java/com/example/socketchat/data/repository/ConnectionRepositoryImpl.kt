@@ -2,6 +2,7 @@ package com.example.socketchat.data.repository
 
 import com.example.socketchat.data.dtomodels.*
 import com.example.socketchat.data.dtomodels.extensions.parseAction
+import com.example.socketchat.data.dtomodels.wrappers.MessageWrapper
 import com.example.socketchat.domain.ConnectionRepository
 import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.example.socketchat.utils.UNDEFINED_USERNAME
@@ -16,6 +17,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
+import java.util.*
 
 class ConnectionRepositoryImpl(
     private val sharedPrefs: UserSharedPrefsRepository
@@ -25,6 +27,8 @@ class ConnectionRepositoryImpl(
     override val connectionState = MutableStateFlow(false)
 
     override val usersList = MutableStateFlow<List<User>>(emptyList())
+
+    override val newMessage = MutableStateFlow(MessageWrapper("", MessageDto(User("", ""), "")))
 
     private val job = SupervisorJob()
     private val actionsScope = CoroutineScope(job + Dispatchers.IO)
@@ -75,6 +79,9 @@ class ConnectionRepositoryImpl(
                     is UsersReceivedDto -> {
                         parseUsersReceivedDto(dto)
                     }
+                    is MessageDto -> {
+                        newMessage.value = MessageWrapper(UUID.randomUUID().toString(), dto)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -116,6 +123,23 @@ class ConnectionRepositoryImpl(
 
     override fun logOut() {
         sharedPrefs.putUsername(UNDEFINED_USERNAME)
+    }
+
+    override suspend fun sendMessage(receiverId: String, message: String) {
+        id?.also {
+            val messageToUser = SendMessageDto(it, receiverId, message)
+            val json = gson.toJson(messageToUser)
+            val baseDto = BaseDto(BaseDto.Action.SEND_MESSAGE, json)
+            sendBaseDtoToServer(baseDto)
+        }
+    }
+
+    override fun getId(): String? {
+        return id
+    }
+
+    override fun getUsername(): String {
+        return sharedPrefs.getUsername()
     }
 
     private suspend fun sendConnectDto() {

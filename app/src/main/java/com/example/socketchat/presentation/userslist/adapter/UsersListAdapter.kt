@@ -6,7 +6,9 @@ import androidx.recyclerview.widget.ListAdapter
 import com.example.socketchat.data.dtomodels.User
 import com.example.socketchat.databinding.UserItemBinding
 
-class UsersListAdapter() : ListAdapter<User, UsersListViewHolder>(UsersListDiffCallback()) {
+class UsersListAdapter(
+    private val onItemClickListener: (User) -> Unit
+) : ListAdapter<User, UsersListViewHolder>(UsersListDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UsersListViewHolder {
         val binding = UserItemBinding.inflate(
@@ -14,7 +16,7 @@ class UsersListAdapter() : ListAdapter<User, UsersListViewHolder>(UsersListDiffC
             parent,
             false
         )
-        return UsersListViewHolder(binding)
+        return UsersListViewHolder(binding, onItemClickListener)
     }
 
     override fun onBindViewHolder(holder: UsersListViewHolder, position: Int) {

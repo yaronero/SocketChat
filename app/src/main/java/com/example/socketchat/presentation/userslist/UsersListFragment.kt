@@ -3,7 +3,10 @@ package com.example.socketchat.presentation.userslist
 import android.os.Bundle
 import android.view.*
 import androidx.fragment.app.Fragment
+import com.example.socketchat.R
+import com.example.socketchat.data.dtomodels.User
 import com.example.socketchat.databinding.FragmentUsersListBinding
+import com.example.socketchat.presentation.chat.ChatFragment
 import com.example.socketchat.presentation.userslist.adapter.UsersListAdapter
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -12,7 +15,7 @@ class UsersListFragment : Fragment() {
     private lateinit var binding: FragmentUsersListBinding
 
     private val adapter by lazy {
-        UsersListAdapter()
+        UsersListAdapter(::onItemClickListener)
     }
 
     private val viewModel: UsersListViewModel by viewModel()
@@ -39,5 +42,13 @@ class UsersListFragment : Fragment() {
 
     private fun setupAdapter() {
         binding.rvUsersList.adapter = adapter
+    }
+
+    private fun onItemClickListener(user: User) {
+        parentFragmentManager
+            .beginTransaction()
+            .replace(R.id.container, ChatFragment.newInstance(user.id))
+            .addToBackStack(null)
+            .commit()
     }
 }
