@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.socketchat.domain.ConnectionRepository
+import com.example.socketchat.utils.UNDEFINED_USERNAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -22,9 +23,12 @@ class AuthorizationViewModel(
     val usernameError: LiveData<Boolean>
         get() = _usernameError
 
-    fun sendAuth() {
+    fun sendAuth(isAutoAuth: Boolean) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.setupConnection(_username.value!!)
+            if (isAutoAuth)
+                repository.setupConnection(repository.getUsername())
+            else
+                repository.setupConnection(_username.value!!)
         }
         viewModelScope.launch(Dispatchers.IO) {
             repository.connectionState.collect {
@@ -36,5 +40,9 @@ class AuthorizationViewModel(
     fun checkUsername(username: String) {
         _username.value = username
         _usernameError.value = username.isBlank()
+    }
+
+    fun isAuthorized(): Boolean {
+        return repository.getUsername() != UNDEFINED_USERNAME
     }
 }

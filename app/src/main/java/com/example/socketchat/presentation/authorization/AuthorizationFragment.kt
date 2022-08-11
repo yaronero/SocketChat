@@ -33,6 +33,10 @@ class AuthorizationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.authorization)
+        if(viewModel.isAuthorized()) {
+            viewModel.sendAuth(true)
+            loadUserListFragment()
+        }
 
         binding.btnLogin.setOnClickListener {
             val username = binding.etUsername.text.toString()
@@ -44,7 +48,7 @@ class AuthorizationFragment : Fragment() {
     private fun setupObservers() {
         viewModel.usernameError.observe(viewLifecycleOwner) {
             if (!it) {
-                viewModel.sendAuth()
+                viewModel.sendAuth(false)
                 binding.etUsername.isEnabled = false
                 binding.btnLogin.isEnabled = false
                 binding.progressBar.isVisible = true
@@ -54,11 +58,15 @@ class AuthorizationFragment : Fragment() {
         }
         viewModel.isConnectedToServer.observe(viewLifecycleOwner) {
             if (it) {
-                parentFragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container, UsersListFragment())
-                    .commit()
+                loadUserListFragment()
             }
         }
+    }
+
+    private fun loadUserListFragment() {
+        parentFragmentManager
+            .beginTransaction()
+            .replace(R.id.container, UsersListFragment())
+            .commit()
     }
 }
