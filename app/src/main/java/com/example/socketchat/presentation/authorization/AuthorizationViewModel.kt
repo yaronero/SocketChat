@@ -13,6 +13,10 @@ class AuthorizationViewModel(
     private val repository: ConnectionRepository
 ) : ViewModel() {
 
+    private val _isAuthorized = MutableLiveData(false)
+    val isAuthorized: LiveData<Boolean>
+        get() = _isAuthorized
+
     private val _isConnectedToServer = MutableLiveData<Boolean>()
     val isConnectedToServer: LiveData<Boolean>
         get() = _isConnectedToServer
@@ -23,14 +27,22 @@ class AuthorizationViewModel(
     val usernameError: LiveData<Boolean>
         get() = _usernameError
 
-    fun sendAuth(username: String = repository.getUsername()) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.setupConnection(username)
-        }
+    init {
         viewModelScope.launch(Dispatchers.IO) {
             repository.connectionState.collect {
                 _isConnectedToServer.postValue(it)
             }
+        }
+        if(isAuthorized()) {
+            _isAuthorized.value = true
+            sendAuth()
+        }
+    }
+
+    fun sendAuth(username: String = repository.getUsername()) {
+        _isAuthorized.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.setupConnection(username)
         }
     }
 
@@ -39,7 +51,7 @@ class AuthorizationViewModel(
         _usernameError.value = username.isBlank()
     }
 
-    fun isAuthorized(): Boolean {
+    private fun isAuthorized(): Boolean {
         return repository.getUsername() != UNDEFINED_USERNAME
     }
 }

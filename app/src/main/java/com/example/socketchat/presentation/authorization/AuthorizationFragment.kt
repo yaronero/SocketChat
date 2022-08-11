@@ -33,10 +33,6 @@ class AuthorizationFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.authorization)
-        if(viewModel.isAuthorized()) {
-            viewModel.sendAuth()
-            loadUserListFragment()
-        }
 
         binding.btnLogin.setOnClickListener {
             val username = binding.etUsername.text.toString()
@@ -49,11 +45,15 @@ class AuthorizationFragment : Fragment() {
         viewModel.usernameError.observe(viewLifecycleOwner) {
             if (!it) {
                 viewModel.sendAuth(binding.etUsername.text.toString())
+            } else {
+                Toast.makeText(requireContext(), "Invalid username", Toast.LENGTH_SHORT).show()
+            }
+        }
+        viewModel.isAuthorized.observe(viewLifecycleOwner) {
+            if(it) {
                 binding.etUsername.isEnabled = false
                 binding.btnLogin.isEnabled = false
                 binding.progressBar.isVisible = true
-            } else {
-                Toast.makeText(requireContext(), "Invalid username", Toast.LENGTH_SHORT).show()
             }
         }
         viewModel.isConnectedToServer.observe(viewLifecycleOwner) {
