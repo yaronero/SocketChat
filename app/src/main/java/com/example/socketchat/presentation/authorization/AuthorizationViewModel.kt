@@ -23,12 +23,9 @@ class AuthorizationViewModel(
     val usernameError: LiveData<Boolean>
         get() = _usernameError
 
-    fun sendAuth(isAutoAuth: Boolean) {
+    fun sendAuth(username: String = repository.getUsername()) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (isAutoAuth)
-                repository.setupConnection(repository.getUsername())
-            else
-                repository.setupConnection(_username.value!!)
+            repository.setupConnection(username)
         }
         viewModelScope.launch(Dispatchers.IO) {
             repository.connectionState.collect {

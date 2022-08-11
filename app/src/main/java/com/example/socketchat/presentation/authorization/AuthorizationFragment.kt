@@ -34,7 +34,7 @@ class AuthorizationFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.authorization)
         if(viewModel.isAuthorized()) {
-            viewModel.sendAuth(true)
+            viewModel.sendAuth()
             loadUserListFragment()
         }
 
@@ -48,7 +48,7 @@ class AuthorizationFragment : Fragment() {
     private fun setupObservers() {
         viewModel.usernameError.observe(viewLifecycleOwner) {
             if (!it) {
-                viewModel.sendAuth(false)
+                viewModel.sendAuth(binding.etUsername.text.toString())
                 binding.etUsername.isEnabled = false
                 binding.btnLogin.isEnabled = false
                 binding.progressBar.isVisible = true
