@@ -24,10 +24,8 @@ class ChatViewModel(
     init {
         viewModelScope.launch(Dispatchers.IO) {
             repository.newMessage.collect {
-                if (it.messageDto.message != "") {
-                    val list = newMessages.value?.plus(it) ?: listOf(it)
-                    _newMessages.postValue(list)
-                }
+                val list = newMessages.value?.plus(it) ?: listOf(it)
+                _newMessages.postValue(list)
             }
         }
     }
@@ -41,8 +39,8 @@ class ChatViewModel(
                 )
                 val list = newMessages.value?.plus(messageModel) ?: listOf(messageModel)
                 _newMessages.postValue(list)
+                repository.sendMessage(anotherUserId, message)
             }
-            repository.sendMessage(anotherUserId, message)
         }
     }
 
