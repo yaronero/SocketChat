@@ -2,11 +2,13 @@ package com.example.socketchat.data.repository
 
 import com.example.socketchat.data.dtomodels.*
 import com.example.socketchat.data.dtomodels.extensions.parseAction
+import com.example.socketchat.data.dtomodels.wrappers.MessageWrapper
 import com.example.socketchat.domain.ConnectionRepository
 import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.example.socketchat.utils.UNDEFINED_USERNAME
 import com.google.gson.Gson
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -16,6 +18,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 import java.net.Socket
+import java.util.*
 
 class ConnectionRepositoryImpl(
     private val sharedPrefs: UserSharedPrefsRepository
@@ -25,6 +28,8 @@ class ConnectionRepositoryImpl(
     override val connectionState = MutableStateFlow(false)
 
     override val usersList = MutableStateFlow<List<User>>(emptyList())
+
+    override val newMessage = MutableSharedFlow<MessageWrapper>()
 
     private val job = SupervisorJob()
     private val actionsScope = CoroutineScope(job + Dispatchers.IO)
@@ -75,6 +80,9 @@ class ConnectionRepositoryImpl(
                     is UsersReceivedDto -> {
                         parseUsersReceivedDto(dto)
                     }
+                    is MessageDto -> {
+                        newMessage.emit(MessageWrapper(UUID.randomUUID().toString(), dto))
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -116,6 +124,23 @@ class ConnectionRepositoryImpl(
 
     override fun logOut() {
         sharedPrefs.putUsername(UNDEFINED_USERNAME)
+    }
+
+    override suspend fun sendMessage(receiverId: String, message: String) {
+        id?.also {
+            val messageToUser = SendMessageDto(it, receiverId, message)
+            val json = gson.toJson(messageToUser)
+            val baseDto = BaseDto(BaseDto.Action.SEND_MESSAGE, json)
+            sendBaseDtoToServer(baseDto)
+        }
+    }
+
+    override fun getId(): String? {
+        return id
+    }
+
+    override fun getUsername(): String {
+        return sharedPrefs.getUsername()
     }
 
     private suspend fun sendConnectDto() {
@@ -178,8 +203,8 @@ class ConnectionRepositoryImpl(
         private const val UDP_PORT = 8888
         private const val TCP_PORT = 6666
 
-//        private const val BROADCAST_ADDRESS = "10.0.2.2"
-        private const val BROADCAST_ADDRESS = "255.255.255.255"
+        private const val BROADCAST_ADDRESS = "10.0.2.2"
+//        private const val BROADCAST_ADDRESS = "255.255.255.255"
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 
