@@ -6,27 +6,27 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
-import com.example.socketchat.data.dtomodels.MessageDto
-import com.example.socketchat.data.dtomodels.wrappers.MessageWrapper
-import com.example.socketchat.data.dtomodels.User
 import com.example.socketchat.databinding.FragmentChatBinding
 import com.example.socketchat.presentation.chat.adapter.ChatAdapter
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import org.koin.core.parameter.parametersOf
-import java.util.*
 
 class ChatFragment : Fragment() {
 
     private lateinit var binding: FragmentChatBinding
 
+    private val anotherUserId by lazy {
+        arguments?.getString(ANOTHER_USER_ID)!!
+    }
+
     private val viewModel: ChatViewModel by viewModel {
         parametersOf(
-            arguments?.getString(ANOTHER_USER_ID)!!
+            anotherUserId
         )
     }
 
     private val adapter by lazy {
-        ChatAdapter(arguments?.getString(ANOTHER_USER_ID)!!)
+        ChatAdapter(anotherUserId)
     }
 
     override fun onCreateView(
@@ -49,26 +49,15 @@ class ChatFragment : Fragment() {
 
     private fun setupObservers() {
         viewModel.newMessages.observe(viewLifecycleOwner) {
-            val list = adapter.currentList.plus(it)
-            adapter.submitList(list)
+            adapter.submitList(it)
         }
     }
 
     private fun setupListeners() {
         binding.btnSendMessage.setOnClickListener {
             val message = binding.etMessage.text.toString()
-            if (message.isNotBlank()) {
-                adapter.submitList(
-                    adapter.currentList.plus(
-                        MessageWrapper(
-                            UUID.randomUUID().toString(),
-                            MessageDto(User(viewModel.getId(), viewModel.getUsername()), message)
-                        )
-                    )
-                )
-                binding.etMessage.setText("")
-                viewModel.sendMessage(message)
-            }
+            binding.etMessage.setText("")
+            viewModel.sendMessage(message)
         }
     }
 

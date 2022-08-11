@@ -8,6 +8,7 @@ import com.example.socketchat.domain.UserSharedPrefsRepository
 import com.example.socketchat.utils.UNDEFINED_USERNAME
 import com.google.gson.Gson
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -28,7 +29,7 @@ class ConnectionRepositoryImpl(
 
     override val usersList = MutableStateFlow<List<User>>(emptyList())
 
-    override val newMessage = MutableStateFlow(MessageWrapper("", MessageDto(User("", ""), "")))
+    override val newMessage = MutableSharedFlow<MessageWrapper>()
 
     private val job = SupervisorJob()
     private val actionsScope = CoroutineScope(job + Dispatchers.IO)
@@ -80,7 +81,7 @@ class ConnectionRepositoryImpl(
                         parseUsersReceivedDto(dto)
                     }
                     is MessageDto -> {
-                        newMessage.value = MessageWrapper(UUID.randomUUID().toString(), dto)
+                        newMessage.emit(MessageWrapper(UUID.randomUUID().toString(), dto))
                     }
                 }
             } catch (e: Exception) {
@@ -202,8 +203,8 @@ class ConnectionRepositoryImpl(
         private const val UDP_PORT = 8888
         private const val TCP_PORT = 6666
 
-//        private const val BROADCAST_ADDRESS = "10.0.2.2"
-        private const val BROADCAST_ADDRESS = "255.255.255.255"
+        private const val BROADCAST_ADDRESS = "10.0.2.2"
+//        private const val BROADCAST_ADDRESS = "255.255.255.255"
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 

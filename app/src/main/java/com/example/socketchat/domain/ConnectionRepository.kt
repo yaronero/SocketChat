@@ -2,6 +2,7 @@ package com.example.socketchat.domain
 
 import com.example.socketchat.data.dtomodels.wrappers.MessageWrapper
 import com.example.socketchat.data.dtomodels.User
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface ConnectionRepository {
@@ -10,7 +11,7 @@ interface ConnectionRepository {
 
     val usersList: StateFlow<List<User>>
 
-    val newMessage: StateFlow<MessageWrapper>
+    val newMessage: SharedFlow<MessageWrapper>
 
     suspend fun setupConnection(username: String)
 

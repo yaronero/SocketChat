@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:backgroundTint="#AEC1DD"
+    android:backgroundTint="@color/another_user_message"
     app:cardCornerRadius="16dp"
     android:layout_margin="6dp">
 
