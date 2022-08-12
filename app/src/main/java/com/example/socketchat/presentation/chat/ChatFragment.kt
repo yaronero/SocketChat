@@ -1,11 +1,11 @@
 package com.example.socketchat.presentation.chat
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import com.example.socketchat.R
 import com.example.socketchat.databinding.FragmentChatBinding
 import com.example.socketchat.presentation.chat.adapter.ChatAdapter
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -41,6 +41,7 @@ class ChatFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as AppCompatActivity).supportActionBar?.title = arguments?.getString(ANOTHER_USER_NAME)!!
 
         setupObservers()
         setupListeners()
@@ -65,12 +66,21 @@ class ChatFragment : Fragment() {
         binding.rvMessages.adapter = adapter
     }
 
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.main_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
     companion object {
         private const val ANOTHER_USER_ID = "another_user_id"
+        private const val ANOTHER_USER_NAME = "another_user_name"
 
-        fun newInstance(anotherUserId: String): ChatFragment {
+        fun newInstance(anotherUserId: String, username: String): ChatFragment {
             return ChatFragment().apply {
-                arguments = bundleOf(ANOTHER_USER_ID to anotherUserId)
+                arguments = bundleOf(
+                    ANOTHER_USER_ID to anotherUserId,
+                    ANOTHER_USER_NAME to username
+                )
             }
         }
     }

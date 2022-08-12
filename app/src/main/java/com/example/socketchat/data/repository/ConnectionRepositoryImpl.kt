@@ -122,8 +122,15 @@ class ConnectionRepositoryImpl(
         }
     }
 
-    override fun logOut() {
+    override suspend fun logOut() {
         sharedPrefs.putUsername(UNDEFINED_USERNAME)
+        id?.also {
+            val disconnectDto = DisconnectDto(it, 200)
+            val json = gson.toJson(disconnectDto)
+            val baseDto = BaseDto(BaseDto.Action.DISCONNECT, json)
+            sendBaseDtoToServer(baseDto)
+        }
+        closeConnection()
     }
 
     override suspend fun sendMessage(receiverId: String, message: String) {
@@ -166,9 +173,14 @@ class ConnectionRepositoryImpl(
 
     private suspend fun closeConnection() {
         reader?.close()
+        reader = null
         writer?.close()
+        writer = null
         socketTCP?.close()
+        socketTCP = null
+
         connectionState.value = false
+        isConnected = false
         job.cancelChildren()
     }
 
@@ -203,8 +215,8 @@ class ConnectionRepositoryImpl(
         private const val UDP_PORT = 8888
         private const val TCP_PORT = 6666
 
-        private const val BROADCAST_ADDRESS = "10.0.2.2"
-//        private const val BROADCAST_ADDRESS = "255.255.255.255"
+//        private const val BROADCAST_ADDRESS = "10.0.2.2"
+        private const val BROADCAST_ADDRESS = "255.255.255.255"
 
         private const val SOCKET_CONNECTION_TIMEOUT = 2000
 

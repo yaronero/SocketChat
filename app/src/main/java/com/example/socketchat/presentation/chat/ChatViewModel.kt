@@ -48,7 +48,7 @@ class ChatViewModel(
         return repository.getId() ?: ""
     }
 
-    private fun getUsername(): String {
+    fun getUsername(): String {
         return repository.getUsername()
     }
 }

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.example.socketchat.R
@@ -30,6 +31,7 @@ class AuthorizationFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        (activity as AppCompatActivity).supportActionBar?.title = getString(R.string.authorization)
 
         binding.btnLogin.setOnClickListener {
             val username = binding.etUsername.text.toString()
@@ -39,23 +41,33 @@ class AuthorizationFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        viewModel.usernameError.observe(viewLifecycleOwner) {
-            if (!it) {
-                viewModel.sendAuth()
+        viewModel.isUsernameError.observe(viewLifecycleOwner) {
+            if (it) {
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.invalid_username),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+        viewModel.isLoading.observe(viewLifecycleOwner) {
+            if (it) {
                 binding.etUsername.isEnabled = false
                 binding.btnLogin.isEnabled = false
                 binding.progressBar.isVisible = true
-            } else {
-                Toast.makeText(requireContext(), "Invalid username", Toast.LENGTH_SHORT).show()
             }
         }
         viewModel.isConnectedToServer.observe(viewLifecycleOwner) {
             if (it) {
-                parentFragmentManager
-                    .beginTransaction()
-                    .replace(R.id.container, UsersListFragment())
-                    .commit()
+                loadUserListFragment()
             }
         }
+    }
+
+    private fun loadUserListFragment() {
+        parentFragmentManager
+            .beginTransaction()
+            .replace(R.id.container, UsersListFragment())
+            .commit()
     }
 }

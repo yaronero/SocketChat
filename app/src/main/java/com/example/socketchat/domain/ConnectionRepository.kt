@@ -23,7 +23,7 @@ interface ConnectionRepository {
 
     fun getUsername(): String
 
-    fun logOut()
+    suspend fun logOut()
 
     fun getConnectionState(): Boolean
 }

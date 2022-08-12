@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.socketchat.domain.ConnectionRepository
+import com.example.socketchat.utils.UNDEFINED_USERNAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -12,29 +13,47 @@ class AuthorizationViewModel(
     private val repository: ConnectionRepository
 ) : ViewModel() {
 
+    private val _isLoading = MutableLiveData(false)
+    val isLoading: LiveData<Boolean>
+        get() = _isLoading
+
     private val _isConnectedToServer = MutableLiveData<Boolean>()
     val isConnectedToServer: LiveData<Boolean>
         get() = _isConnectedToServer
 
-    private val _username = MutableLiveData<String>()
+    private val _isUsernameError = SingleLiveEvent()
+    val isUsernameError: LiveData<Boolean>
+        get() = _isUsernameError
 
-    private val _usernameError = SingleLiveEvent()
-    val usernameError: LiveData<Boolean>
-        get() = _usernameError
-
-    fun sendAuth() {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.setupConnection(_username.value!!)
-        }
+    init {
         viewModelScope.launch(Dispatchers.IO) {
             repository.connectionState.collect {
                 _isConnectedToServer.postValue(it)
             }
         }
+        if(isAuthorized()) {
+            _isLoading.value = true
+            sendAuth()
+        }
+    }
+
+    private fun sendAuth(username: String = repository.getUsername()) {
+        _isLoading.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.setupConnection(username)
+        }
     }
 
     fun checkUsername(username: String) {
-        _username.value = username
-        _usernameError.value = username.isBlank()
+        if(username.isNotBlank()) {
+            _isUsernameError.value = false
+            sendAuth(username)
+        } else {
+            _isUsernameError.value = true
+        }
+    }
+
+    private fun isAuthorized(): Boolean {
+        return repository.getUsername() != UNDEFINED_USERNAME
     }
 }
