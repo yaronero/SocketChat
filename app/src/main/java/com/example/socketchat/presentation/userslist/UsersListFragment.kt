@@ -5,8 +5,8 @@ import android.view.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.socketchat.R
-import com.example.socketchat.data.dtomodels.User
 import com.example.socketchat.databinding.FragmentUsersListBinding
+import com.example.socketchat.models.dtomodels.User
 import com.example.socketchat.presentation.authorization.AuthorizationFragment
 import com.example.socketchat.presentation.chat.ChatFragment
 import com.example.socketchat.presentation.userslist.adapter.UsersListAdapter

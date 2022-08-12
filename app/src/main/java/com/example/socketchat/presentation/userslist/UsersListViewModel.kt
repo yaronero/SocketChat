@@ -4,7 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.socketchat.data.dtomodels.User
+import com.example.socketchat.models.dtomodels.User
 import com.example.socketchat.domain.ConnectionRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
