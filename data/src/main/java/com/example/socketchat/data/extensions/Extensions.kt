@@ -3,7 +3,7 @@ package com.example.socketchat.data.extensions
 import com.example.socketchat.models.dtomodels.*
 import com.google.gson.Gson
 
-fun <T: Payload> BaseDto.parseAction(action: BaseDto.Action): T {
+internal fun <T: Payload> BaseDto.parseAction(action: BaseDto.Action): T {
     val gson = Gson()
     return when(action) {
         BaseDto.Action.CONNECT -> gson.fromJson(payload, ConnectDto::class.java)
