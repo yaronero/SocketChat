@@ -13,9 +13,9 @@ class AuthorizationViewModel(
     private val repository: ConnectionRepository
 ) : ViewModel() {
 
-    private val _isAuthorized = MutableLiveData(false)
-    val isAuthorized: LiveData<Boolean>
-        get() = _isAuthorized
+    private val _isLoading = MutableLiveData(false)
+    val isLoading: LiveData<Boolean>
+        get() = _isLoading
 
     private val _isConnectedToServer = MutableLiveData<Boolean>()
     val isConnectedToServer: LiveData<Boolean>
@@ -32,13 +32,13 @@ class AuthorizationViewModel(
             }
         }
         if(isAuthorized()) {
-            _isAuthorized.value = true
+            _isLoading.value = true
             sendAuth()
         }
     }
 
     private fun sendAuth(username: String = repository.getUsername()) {
-        _isAuthorized.value = true
+        _isLoading.value = true
         viewModelScope.launch(Dispatchers.IO) {
             repository.setupConnection(username)
         }

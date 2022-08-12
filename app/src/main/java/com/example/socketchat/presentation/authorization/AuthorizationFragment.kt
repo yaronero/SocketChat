@@ -10,7 +10,6 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.example.socketchat.R
 import com.example.socketchat.databinding.FragmentAuthorizationBinding
-import com.example.socketchat.presentation.chat.ChatFragment
 import com.example.socketchat.presentation.userslist.UsersListFragment
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -51,7 +50,7 @@ class AuthorizationFragment : Fragment() {
                 ).show()
             }
         }
-        viewModel.isAuthorized.observe(viewLifecycleOwner) {
+        viewModel.isLoading.observe(viewLifecycleOwner) {
             if (it) {
                 binding.etUsername.isEnabled = false
                 binding.btnLogin.isEnabled = false
