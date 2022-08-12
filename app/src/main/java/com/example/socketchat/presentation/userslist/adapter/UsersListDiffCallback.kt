@@ -1,7 +1,7 @@
 package com.example.socketchat.presentation.userslist.adapter
 
 import androidx.recyclerview.widget.DiffUtil
-import com.example.socketchat.data.dtomodels.User
+import com.example.socketchat.domain.data.dtomodels.User
 
 class UsersListDiffCallback : DiffUtil.ItemCallback<User>() {
 

@@ -3,7 +3,7 @@ package com.example.socketchat.presentation.userslist.adapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.ListAdapter
-import com.example.socketchat.data.dtomodels.User
+import com.example.socketchat.domain.data.dtomodels.User
 import com.example.socketchat.databinding.UserItemBinding
 
 class UsersListAdapter(
