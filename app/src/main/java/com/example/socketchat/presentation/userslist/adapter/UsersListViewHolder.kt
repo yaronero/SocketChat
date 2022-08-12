@@ -1,7 +1,7 @@
 package com.example.socketchat.presentation.userslist.adapter
 
 import androidx.recyclerview.widget.RecyclerView
-import com.example.socketchat.domain.data.dtomodels.User
+import com.example.socketchat.models.dtomodels.User
 import com.example.socketchat.databinding.UserItemBinding
 
 class UsersListViewHolder(

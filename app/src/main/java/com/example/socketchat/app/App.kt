@@ -1,7 +1,7 @@
 package com.example.socketchat.app
 
 import android.app.Application
-import com.example.socketchat.domain.data.di.dataModule
+import com.example.socketchat.data.di.dataModule
 import com.example.socketchat.di.viewModelsModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin

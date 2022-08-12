@@ -4,8 +4,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.socketchat.domain.domain.ConnectionRepository
-import com.example.socketchat.domain.utils.UNDEFINED_USERNAME
+import com.example.socketchat.domain.ConnectionRepository
+import com.example.socketchat.utils.UNDEFINED_USERNAME
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

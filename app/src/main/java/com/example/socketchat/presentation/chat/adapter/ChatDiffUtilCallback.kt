@@ -1,7 +1,7 @@
 package com.example.socketchat.presentation.chat.adapter
 
 import androidx.recyclerview.widget.DiffUtil
-import com.example.socketchat.domain.data.dtomodels.wrappers.MessageWrapper
+import com.example.socketchat.models.wrappers.MessageWrapper
 
 class ChatDiffUtilCallback : DiffUtil.ItemCallback<MessageWrapper>() {
 

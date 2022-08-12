@@ -2,7 +2,7 @@ package com.example.socketchat.presentation.chat.adapter
 
 import android.view.View
 import androidx.recyclerview.widget.RecyclerView
-import com.example.socketchat.domain.data.dtomodels.wrappers.MessageWrapper
+import com.example.socketchat.models.wrappers.MessageWrapper
 import com.example.socketchat.databinding.AnotherUserMessageBinding
 import com.example.socketchat.databinding.MyMessageBinding
 
